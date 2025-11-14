@@ -11,10 +11,10 @@ object SessionManager {
 
     fun initializeFromCli(cliSessionId: String?): ChatFacade {
         val session: ChatFacade
-        val assistant = Assistant.Companion.createAzorAssistant()
+        val assistant = Assistant.createAzorAssistant()
 
         if (cliSessionId != null) {
-            val loadedSession = ChatFacade.Companion.loadFromFile(assistant, cliSessionId)
+            val loadedSession = ChatFacade.loadFromFile(assistant, cliSessionId)
 
             session = if (loadedSession == null) {
                 val fresh = ChatFacade(assistant)

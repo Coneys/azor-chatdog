@@ -2,6 +2,7 @@ package chat
 
 import assistant.Assistant
 import llm.LlmClient
+import llm.ollama.OllamaLLMClient
 import session.LlmChatSession
 import session.SessionSnapshot
 import session.SessionHistory
@@ -22,6 +23,7 @@ class ChatFacade(
         val engine = (System.getenv("ENGINE") ?: "GEMINI").uppercase()
         llmClient = when (engine) {
             "GEMINI" -> GeminiLLMClient.fromEnvironment()
+            "OLLAMA" -> OllamaLLMClient()
             else -> error("Unkown engine $engine")
         }
 

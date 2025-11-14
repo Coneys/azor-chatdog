@@ -66,4 +66,8 @@ class SessionHistory(val entries: List<Entry>) {
         }
     }
 
+    fun withUserMessage(text: String) = SessionHistory(entries + Entry("user", listOf(Message.Text(text))))
+
+    fun withModelResponse(text: String) = SessionHistory(entries + Entry("model", listOf(Message.Text(text))))
+
 }

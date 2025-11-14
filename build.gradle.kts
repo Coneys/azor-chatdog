@@ -13,7 +13,13 @@ repositories {
 dependencies {
     implementation("com.google.genai:google-genai:1.27.0")
     testImplementation(kotlin("test"))
+    implementation("io.ktor:ktor-client-core:3.3.2")
+    implementation("io.ktor:ktor-client-cio:3.3.2")
+    implementation("io.ktor:ktor-client-logging:3.3.2")
+    implementation("io.ktor:ktor-client-content-negotiation:3.3.2")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
+    implementation("ch.qos.logback:logback-classic:1.5.21")
 
 }
 
