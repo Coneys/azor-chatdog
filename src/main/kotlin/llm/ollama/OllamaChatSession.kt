@@ -9,6 +9,7 @@ import io.ktor.client.request.setBody
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import kotlinx.coroutines.runBlocking
+import llm.LlmClient
 import message.Message
 import session.LlmChatSession
 import session.SessionHistory
@@ -18,7 +19,7 @@ class OllamaChatSession(
     private val systemInstruction: String,
     private val http: HttpClient,
     private var history: SessionHistory,
-    private val thinkingBudget: Int
+    private val options: LlmClient.Options
 ) : LlmChatSession {
 
     override fun getHistory(): SessionHistory = history
@@ -29,7 +30,11 @@ class OllamaChatSession(
         val request = OllamaRequest(
             model = model,
             prompt = fullPrompt,
-            stream = false
+            stream = false,
+
+            temperature = options.temperature?.toDouble(),
+            topP = options.topP?.toDouble(),
+            topK = options.topK,
         )
 
         val result = runBlocking {

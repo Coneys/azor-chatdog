@@ -7,6 +7,7 @@ import llm.gemini.asGeminiContent
 import session.LlmChatSession
 import llm.gemini.GeminiChatSessionWrapper
 import llm.LlmClient
+import llm.gemini.applyOptions
 import session.SessionHistory
 import java.lang.reflect.Field
 
@@ -70,15 +71,14 @@ class GeminiLLMClient(
     override fun createChatSession(
         systemInstruction: String,
         history: SessionHistory,
-        thinkingBudget: Int
+        options: LlmClient.Options
     ): LlmChatSession {
-        val config = GenerateContentConfig.builder()
+        val builder = GenerateContentConfig.builder()
+
+        val config = builder
+            .applyOptions(options)
             .systemInstruction(Content.fromParts(Part.fromText(systemInstruction)))
-            .thinkingConfig(
-                ThinkingConfig.builder()
-                    .thinkingBudget(thinkingBudget)
-                    .build()
-            )
+
             .build()
 
         val chat = client.chats.create(modelName, config)
@@ -111,5 +111,3 @@ class GeminiLLMClient(
         return "✅ Klient Gemini gotowy do użycia (Model: $modelName, Key: $masked)"
     }
 }
-
-

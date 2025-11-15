@@ -19,6 +19,9 @@ private val ollamaHttp = HttpClient {
             ignoreUnknownKeys = true
         })
     }
+    install(Logging) {
+        level = LogLevel.NONE
+    }
 }
 
 class OllamaLLMClient(
@@ -28,14 +31,14 @@ class OllamaLLMClient(
     override fun createChatSession(
         systemInstruction: String,
         history: SessionHistory,
-        thinkingBudget: Int
+        options: LlmClient.Options
     ): LlmChatSession {
         return OllamaChatSession(
             model = modelName,
             systemInstruction = systemInstruction,
             http = ollamaHttp,
             history = history,
-            thinkingBudget = thinkingBudget
+            options = LlmClient.Options(temperature = 0f, topK = 1)
         )
     }
 

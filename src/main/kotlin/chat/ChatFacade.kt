@@ -20,7 +20,7 @@ class ChatFacade(
     private val maxContextTokens = 32768
 
     init {
-        val engine = (System.getenv("ENGINE") ?: "GEMINI").uppercase()
+        val engine = (System.getenv("ENGINE") ?: "OLLAMA").uppercase()
         llmClient = when (engine) {
             "GEMINI" -> GeminiLLMClient.fromEnvironment()
             "OLLAMA" -> OllamaLLMClient()
@@ -73,7 +73,7 @@ class ChatFacade(
     private fun initializeSession(initialHistory: SessionHistory): LlmChatSession = llmClient!!.createChatSession(
         systemInstruction = assistant.systemPrompt,
         history = initialHistory,
-        thinkingBudget = 0
+        options = LlmClient.Options.empty
     )
 
     fun popLastExchange(): Boolean {
