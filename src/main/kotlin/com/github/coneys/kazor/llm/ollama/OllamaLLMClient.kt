@@ -28,6 +28,10 @@ class OllamaLLMClient(
     private val modelName: String = "mistral"
 ) : LlmClient {
 
+    init {
+        println(readyForUseMessage())
+    }
+
     override fun createChatSession(
         systemInstruction: String,
         history: SessionHistory,
@@ -45,7 +49,7 @@ class OllamaLLMClient(
     override fun getModelName(): String = modelName
 
     override fun readyForUseMessage(): String {
-        return "🟢 Połączono z lokalnym modelem Ollama: $modelName"
+        return "🟢 Przygotowano konfigurację lokalnego modelu Ollama: $modelName"
     }
 
     override fun countHistoryTokens(history: SessionHistory): Int {
