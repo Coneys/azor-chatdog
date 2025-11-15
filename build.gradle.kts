@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "2.2.20"
     kotlin("plugin.serialization") version "2.2.0"
+    application
 }
 
 group = "com.github.coneys"
@@ -28,4 +29,12 @@ tasks.test {
 }
 kotlin {
     jvmToolchain(19)
+}
+
+application {
+    mainClass.set("com.github.coneys.kazor.MainKt")
+}
+
+tasks.named<JavaExec>("run") {
+    standardInput = System.`in`
 }
