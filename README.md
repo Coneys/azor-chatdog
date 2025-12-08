@@ -67,6 +67,7 @@ W trakcie czatu dostępne są następujące polecenia:
 /switch <ID>      - Przełącza na istniejącą sesję.
 /help             - Wyświetla tę pomoc.
 /exit, /quit      - Zakończenie czatu.
+/audio            - Generuje plik WAV z ostatniej odpowiedzi asystenta (wymaga działającego serwera TTS — patrz sekcja „Audio”).
 
 /session list     - Wyświetla listę dostępnych sesji.
 /session display  - Wyświetla całą historię sesji.
@@ -77,6 +78,45 @@ W trakcie czatu dostępne są następujące polecenia:
 
 Dodatkowo możesz przekazać `--session-id=<ID>` przy uruchomieniu, aby od razu wejść do wskazanej sesji.
 
+
+## Audio (/audio)
+Nowy feature pozwala wygenerować plik audio (WAV) z ostatniej odpowiedzi asystenta. Aby komenda `/audio` działała, potrzebny jest działający serwer TTS z końcówką HTTP przyjmującą tekst i zwracającą audio WAV.
+
+Wymagania po stronie serwera TTS:
+- Endpoint: `POST /synthesize`
+- Body: formularz `application/x-www-form-urlencoded` z polem `text`
+- Odpowiedź: `audio/wav` (treść pliku WAV)
+
+Domyślna konfiguracja klienta w aplikacji:
+- Host: `0.0.0.0`
+- Port: `8000`
+- Pełny URL: `http://0.0.0.0:8000/synthesize`
+
+Użycie w czacie:
+- Wpisz `/audio` — aplikacja wyśle ostatnią odpowiedź modelu jako `text` do serwera TTS, a otrzymany WAV zapisze lokalnie jako `~/.kazor/<SESSION_ID>-last-response.wav`.
+
+Przykładowy serwer TTS (Python + FastAPI + Coqui TTS):
+
+```python
+from fastapi import FastAPI, Form
+from fastapi.responses import FileResponse
+import tempfile
+from TTS.api import TTS
+
+app = FastAPI()
+
+tts = TTS(model_name="tts_models/pl/mai_female/vits")
+
+@app.post("/synthesize")
+async def synthesize(text: str = Form(...)):
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+        tts.tts_to_file(text=text, file_path=tmp_file.name)
+        tmp_filename = tmp_file.name
+
+    return FileResponse(tmp_filename, media_type="audio/wav", filename="output.wav")
+```
+
+Jeśli Twój serwer TTS działa pod innym adresem lub portem, zmodyfikuj wartości `host` i `port` w `AudioGenerator` lub przygotuj własną instancję klienta.
 
 ## Gdzie zapisywane są sesje?
 Pliki sesji zapisywane są w katalogu użytkownika:
