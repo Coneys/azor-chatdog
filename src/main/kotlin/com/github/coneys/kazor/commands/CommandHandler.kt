@@ -7,10 +7,11 @@ import com.github.coneys.kazor.session.SessionSnapshot
 
 class CommandHandler(
     private val exportSessionToPdf: (SessionSnapshot) -> Unit = {},
-    private val removeSessionCommand: (SessionManager) -> Unit = {}
+    private val removeSessionCommand: (SessionManager) -> Unit = {},
+    private val recordAudioFromLastResponse: (SessionSnapshot) -> Unit,
 ) {
 
-    private val VALID_SLASH_COMMANDS = setOf("/exit", "/quit", "/switch", "/help", "/com/github/coneys/kazor/session", "/pdf")
+    private val VALID_SLASH_COMMANDS = setOf("/exit", "/quit", "/switch", "/help", "/session", "/audio")
 
     /**
      * Handles slash commands.
@@ -26,6 +27,11 @@ class CommandHandler(
             val current = SessionManager.currentSession
             Console.displayHelp(current.sessionId)
             return false
+        }
+        if (command == "/audio") {
+            Console.printInfo("Zapisywanie ostatniej odpowiedzi jako audio...")
+            recordAudioFromLastResponse(SessionManager.currentSession.asSnapshot())
+            Console.printInfo("Zapisywanie zakończone")
         }
 
         // --- HELP ---

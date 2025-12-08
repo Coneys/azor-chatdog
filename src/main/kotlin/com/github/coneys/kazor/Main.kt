@@ -1,5 +1,6 @@
 package com.github.coneys.kazor
 
+import com.github.coneys.kazor.audio.recordAudioFromLastResponse
 import com.github.coneys.kazor.chat.mainLoop
 import com.github.coneys.kazor.console.getSessionIdFromCli
 import com.github.coneys.kazor.commands.CommandHandler
@@ -12,7 +13,8 @@ fun main(args: Array<String>) {
 
     SessionManager.initializeFromCli(sessionId)
 
-    mainLoop(CommandHandler()) { readlnOrNull() }
+    val commandHandler = CommandHandler(recordAudioFromLastResponse = ::recordAudioFromLastResponse)
+    mainLoop(commandHandler) { readlnOrNull() }
 
     Runtime.getRuntime().addShutdownHook(Thread {
         SessionManager.cleanupAndSave()
