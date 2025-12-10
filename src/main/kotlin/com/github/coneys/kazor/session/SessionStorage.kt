@@ -10,15 +10,15 @@ object SessionStorage {
     val logDir = Paths.get(System.getProperty("user.home"), ".kazor").toFile().also { it.mkdirs() }
 
     private val String.file
-        get() = File(logDir, "${this}-log.json").also {
-            it.createNewFile()
-        }
+        get() = File(logDir, "${this}-log.json")
 
     fun listSessions(): List<Pair<SessionSnapshot, Instant>> {
         return logDir.listFiles().orEmpty().toList().filter { it.name.endsWith("-log.json") }
-            .map {
-                val snapshot = Json.decodeFromString<SessionSnapshot>(it.readText())
-                snapshot to Instant.ofEpochMilli(it.lastModified())
+            .mapNotNull {
+                runCatching {
+                    val snapshot = Json.decodeFromString<SessionSnapshot>(it.readText())
+                    snapshot to Instant.ofEpochMilli(it.lastModified())
+                }.getOrNull()
             }
             .sortedByDescending { it.second }
     }
