@@ -9,9 +9,10 @@ class CommandHandler(
     private val exportSessionToPdf: (SessionSnapshot) -> Unit = {},
     private val removeSessionCommand: (SessionManager) -> Unit = {},
     private val recordAudioFromLastResponse: (SessionSnapshot) -> Unit,
+    private val recordAudioForWholeSession: (SessionSnapshot) -> Unit,
 ) {
 
-    private val VALID_SLASH_COMMANDS = setOf("/exit", "/quit", "/switch", "/help", "/session", "/audio")
+    private val VALID_SLASH_COMMANDS = setOf("/exit", "/quit", "/switch", "/help", "/session", "/audio", "/audio-all")
 
     /**
      * Handles slash commands.
@@ -33,6 +34,13 @@ class CommandHandler(
             recordAudioFromLastResponse(SessionManager.currentSession.asSnapshot())
             Console.printInfo("Zapisywanie zakończone")
         }
+
+        if (command == "/audio-all") {
+            Console.printInfo("Zapisywanie całej sesji jako audio...")
+            recordAudioForWholeSession(SessionManager.currentSession.asSnapshot())
+            Console.printInfo("Zapisywanie zakończone")
+        }
+
 
         // --- HELP ---
         if (command == "/help") {
@@ -65,7 +73,7 @@ class CommandHandler(
         }
 
         // --- SESSION ---
-        if (command == "/com/github/coneys/kazor/session") {
+        if (command == "/session") {
             if (parts.size < 2) {
                 Console.printError("Błąd: Komenda /session wymaga podkomendy (list, display, pop, clear, new).")
                 return false

@@ -68,6 +68,7 @@ W trakcie czatu dostępne są następujące polecenia:
 /help             - Wyświetla tę pomoc.
 /exit, /quit      - Zakończenie czatu.
 /audio            - Generuje plik WAV z ostatniej odpowiedzi asystenta (wymaga działającego serwera TTS — patrz sekcja „Audio”).
+/audio-all        - Generuje jeden plik WAV z całej sesji (naprzemiennie TY ↔ asystent). Wymaga serwera TTS obsługującego wiele głosów — patrz sekcja „Audio”.
 
 /session list     - Wyświetla listę dostępnych sesji.
 /session display  - Wyświetla całą historię sesji.
@@ -79,13 +80,18 @@ W trakcie czatu dostępne są następujące polecenia:
 Dodatkowo możesz przekazać `--session-id=<ID>` przy uruchomieniu, aby od razu wejść do wskazanej sesji.
 
 
-## Audio (/audio)
-Nowy feature pozwala wygenerować plik audio (WAV) z ostatniej odpowiedzi asystenta. Aby komenda `/audio` działała, potrzebny jest działający serwer TTS z końcówką HTTP przyjmującą tekst i zwracającą audio WAV.
+## Audio (/audio, /audio-all)
+Funkcje audio pozwalają wygenerować plik(i) WAV z odpowiedzi asystenta.
 
-Wymagania po stronie serwera TTS:
+- `/audio` — generuje plik WAV z ostatniej odpowiedzi asystenta i zapisuje go jako `~/.kazor/<SESSION_ID>-last-response.wav`.
+- `/audio-all` — generuje jeden plik WAV z całej sesji (naprzemiennie: TY ↔ asystent) i zapisuje go jako `~/.kazor/<SESSION_ID>-whole-session.wav`.
+
+Wymagania po stronie serwera TTS (HTTP):
 - Endpoint: `POST /synthesize`
-- Body: formularz `application/x-www-form-urlencoded` z polem `text`
-- Odpowiedź: `audio/wav` (treść pliku WAV)
+- Body: formularz `application/x-www-form-urlencoded` z polami:
+  - `text` — treść do przeczytania (wymagane)
+  - `model_id` — identyfikator wariantu głosu, jako string, np. `"0"` lub `"1"` (opcjonalne dla `/audio`, wymagane praktycznie dla `/audio-all`, aby rozróżnić głos asystenta i użytkownika)
+- Odpowiedź: `audio/wav` (treść pliku WAV). Dla poprawnego łączenia przy `/audio-all` zalecany format: 22050 Hz, 16‑bit, mono, signed little‑endian.
 
 Domyślna konfiguracja klienta w aplikacji:
 - Host: `0.0.0.0`
@@ -93,27 +99,91 @@ Domyślna konfiguracja klienta w aplikacji:
 - Pełny URL: `http://0.0.0.0:8000/synthesize`
 
 Użycie w czacie:
-- Wpisz `/audio` — aplikacja wyśle ostatnią odpowiedź modelu jako `text` do serwera TTS, a otrzymany WAV zapisze lokalnie jako `~/.kazor/<SESSION_ID>-last-response.wav`.
+- `/audio` — aplikacja wyśle ostatnią odpowiedź modelu jako `text` do serwera TTS, a otrzymany WAV zapisze lokalnie jako `~/.kazor/<SESSION_ID>-last-response.wav`.
+- `/audio-all` — aplikacja prześle po kolei treści wszystkich wypowiedzi z historii sesji. Dla wpisów asystenta wyśle `model_id=0`, a dla wpisów użytkownika `model_id=1`. Otrzymane WAV-y zostaną połączone w jeden plik `~/.kazor/<SESSION_ID>-whole-session.wav`.
 
-Przykładowy serwer TTS (Python + FastAPI + Coqui TTS):
+Przykładowy serwer TTS z wieloma głosami (Python + FastAPI + Coqui TTS XTTS v2):
 
 ```python
-from fastapi import FastAPI, Form
+from fastapi import FastAPI, Form, HTTPException
 from fastapi.responses import FileResponse
-import tempfile
 from TTS.api import TTS
+import tempfile
+import os
+import torch
+from TTS.tts.configs.xtts_config import XttsConfig
+from TTS.tts.models.xtts import XttsAudioConfig, XttsArgs
+from TTS.config.shared_configs import BaseDatasetConfig
+import traceback
+from starlette.background import BackgroundTask
 
 app = FastAPI()
 
-tts = TTS(model_name="tts_models/pl/mai_female/vits")
+torch.serialization.add_safe_globals([XttsConfig, XttsAudioConfig, BaseDatasetConfig, XttsArgs])
+
+SAMPLE_AGENT_PATH = "samples/mine.wav"  # głos asystenta (model_id = "0")
+SAMPLE_USER_PATH = "samples/other.wav"  # głos użytkownika (model_id = "1")
+
+if not os.path.exists(SAMPLE_AGENT_PATH) or not os.path.exists(SAMPLE_USER_PATH):
+    print("Błąd: Brak plików sampli głosowych! Ustaw poprawne ścieżki.")
+
+try:
+    XTTS_ENGINE = TTS(model_name="tts_models/multilingual/multi-dataset/xtts_v2")
+except Exception as e:
+    print(f"Błąd ładowania modelu XTTSv2: {e}")
+    XTTS_ENGINE = None
 
 @app.post("/synthesize")
-async def synthesize(text: str = Form(...)):
-    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
-        tts.tts_to_file(text=text, file_path=tmp_file.name)
-        tmp_filename = tmp_file.name
+async def synthesize(
+        text: str = Form(...),
+        model_id: str = Form("0")
+):
+    if XTTS_ENGINE is None:
+        raise HTTPException(status_code=503, detail="Serwer TTS nie jest gotowy.")
 
-    return FileResponse(tmp_filename, media_type="audio/wav", filename="output.wav")
+    if model_id == "0":
+        speaker_wav_path = SAMPLE_AGENT_PATH
+    elif model_id == "1":
+        speaker_wav_path = SAMPLE_USER_PATH
+    else:
+        raise HTTPException(
+            status_code=400,
+            detail="Nieprawidłowa wartość dla 'model_id'. Użyj '0' (Agent) lub '1' (Użytkownik)."
+        )
+
+    if not os.path.exists(speaker_wav_path):
+        raise HTTPException(status_code=500, detail=f"Plik sampla głosowego nie został znaleziony: {speaker_wav_path}")
+
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+        try:
+            XTTS_ENGINE.tts_to_file(
+                text=text,
+                file_path=tmp_file.name,
+                speaker_wav=speaker_wav_path,
+                language="pl"
+            )
+            tmp_filename = tmp_file.name
+        except Exception as e:
+            print("\nBŁĄD SYNTEZY TTS TRACEBACK")
+            traceback.print_exc()
+            print("---------------------------------")
+            if os.path.exists(tmp_file.name):
+                os.remove(tmp_file.name)
+            raise HTTPException(status_code=500, detail=f"Błąd syntezy mowy: {e}")
+
+    def cleanup():
+        os.remove(tmp_filename)
+
+    task = BackgroundTask(cleanup)
+
+    response = FileResponse(
+        tmp_filename,
+        media_type="audio/wav",
+        filename="output.wav",
+        background=task
+    )
+
+    return response
 ```
 
 Jeśli Twój serwer TTS działa pod innym adresem lub portem, zmodyfikuj wartości `host` i `port` w `AudioGenerator` lub przygotuj własną instancję klienta.
