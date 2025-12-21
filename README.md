@@ -75,6 +75,7 @@ W trakcie czatu dostępne są następujące polecenia:
 /session pop      - Usuwa ostatnią parę wpisów (TY i asystent).
 /session clear    - Czyści historię bieżącej sesji.
 /session new      - Rozpoczyna nową sesję.
+/session rename <NOWY_TYTUŁ> - Zmienia tytuł bieżącej sesji.
 ```
 
 Dodatkowo możesz przekazać `--session-id=<ID>` przy uruchomieniu, aby od razu wejść do wskazanej sesji.

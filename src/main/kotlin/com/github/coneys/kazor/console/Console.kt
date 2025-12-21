@@ -62,6 +62,7 @@ object Console {
         printHelp("  /session pop      - Usuwa ostatnią parę wpisów (TY i asystent).")
         printHelp("  /session clear    - Czyści historię bieżącej sesji.")
         printHelp("  /session new      - Rozpoczyna nową sesję.")
+        printHelp("  /session rename <NOWY_TYTUŁ> - Zmienia tytuł bieżącej sesji.")
     }
 
     /** Prints final instructions (same as Python's display_final_instructions) */

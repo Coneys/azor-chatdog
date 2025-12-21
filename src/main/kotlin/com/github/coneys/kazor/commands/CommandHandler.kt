@@ -75,11 +75,11 @@ class CommandHandler(
         // --- SESSION ---
         if (command == "/session") {
             if (parts.size < 2) {
-                Console.printError("Błąd: Komenda /session wymaga podkomendy (list, display, pop, clear, new).")
+                Console.printError("Błąd: Komenda /session wymaga podkomendy (list, display, pop, clear, new, rename).")
                 return false
             }
 
-            handleSessionSubcommand(parts[1].lowercase())
+            handleSessionSubcommand(parts)
             return false
         }
 
@@ -93,8 +93,9 @@ class CommandHandler(
         return false
     }
 
-    private fun handleSessionSubcommand(sub: String) {
+    private fun handleSessionSubcommand(parts: List<String>) {
         val current = SessionManager.currentSession
+        val sub = parts[1].lowercase()
 
         when (sub) {
             "list" -> SessionManager.listAvailableSessions()
@@ -123,6 +124,17 @@ class CommandHandler(
             }
 
             "remove" -> removeSessionCommand(SessionManager)
+
+            "rename" -> {
+                if (parts.size < 3) {
+                    Console.printError("Błąd: Użycie: /session rename <NOWY_TYTUŁ>")
+                } else {
+                    val newTitle = parts.drop(2).joinToString(" ")
+                    current.sessionName = newTitle
+                    current.saveToFile()
+                    Console.printInfo("Zmieniono tytuł bieżącej sesji na: \"$newTitle\"")
+                }
+            }
 
             else -> Console.printError("Błąd: Nieznana podkomenda dla /session: $sub. Użyj /help.")
         }
