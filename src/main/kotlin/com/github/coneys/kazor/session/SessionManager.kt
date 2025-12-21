@@ -93,7 +93,12 @@ object SessionManager {
                 .atZone(ZoneId.systemDefault())
                 .format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"))
 
-            Console.printHelp("- ID: ${snapshot.sessionId} (Wiadomości: $messagesCount, Ost. aktywność: $lastActivity)")
+            val consoleMessage = buildString {
+                append("- ID: ${snapshot.sessionId} (")
+                snapshot.name?.let { name -> append(" \"$name\" ") }
+                append("Wiadomości: $messagesCount, Ost. aktywność: $lastActivity)")
+            }
+            Console.printHelp(consoleMessage)
 
         }
 

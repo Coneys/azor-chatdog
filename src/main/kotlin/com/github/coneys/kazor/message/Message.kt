@@ -8,5 +8,5 @@ sealed interface Message {
 
     @Serializable
     @SerialName("text")
-    class Text(val text: String) : Message
+    data class Text(val text: String) : Message
 }

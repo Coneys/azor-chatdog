@@ -2,6 +2,7 @@ package com.github.coneys.kazor.session
 
 import com.github.coneys.kazor.console.Console
 import kotlinx.serialization.json.Json
+import java.awt.SystemColor.text
 import java.io.File
 import java.nio.file.Paths
 import java.time.Instant
@@ -33,6 +34,9 @@ object SessionStorage {
     }
 
     fun saveSession(sessionSnapshot: SessionSnapshot): Boolean {
+        if(sessionSnapshot.isEmpty){
+            Console.printInfo("Sesja ${sessionSnapshot.presentationName} jest pusta. Pomijam zapis")
+        }
         Console.printInfo("Zapisuję bieżącą sesję: ${SessionManager.currentSession.sessionId}...")
 
         val text = Json.Default.encodeToString(sessionSnapshot)

@@ -7,17 +7,20 @@ import com.github.coneys.kazor.session.LlmChatSession
 import com.github.coneys.kazor.session.SessionSnapshot
 import com.github.coneys.kazor.session.SessionHistory
 import com.github.coneys.kazor.session.SessionStorage
+import com.github.coneys.kazor.session.name.SessionName
 import your.pkg.gemini.GeminiLLMClient
 import java.util.UUID
 
 class ChatFacade(
     val assistant: Assistant,
     val sessionId: String = UUID.randomUUID().toString(),
-    initialHistory: SessionHistory = SessionHistory.Companion.empty
+    initialHistory: SessionHistory = SessionHistory.Companion.empty,
+    initialName: String? = null
 ) {
-    private var llmClient: LlmClient? = null
+    private val llmClient: LlmClient
     private var llmChatSession: LlmChatSession
     private val maxContextTokens = 32768
+    var sessionName: String? = initialName
 
     init {
         val engine = (System.getenv("ENGINE") ?: "GEMINI").uppercase()
@@ -28,18 +31,33 @@ class ChatFacade(
         }
 
         llmChatSession = initializeSession(initialHistory)
+
+        initializeName(initialHistory.entries.firstOrNull()?.messageText)
     }
 
+    private fun initializeName(firstMessage: String?) {
+        if (sessionName != null) return
+        if (firstMessage == null) return
+        println("Initializing session name...")
+        sessionName = SessionName(llmClient).generateFor(firstMessage)
+    }
 
     companion object Companion {
         fun loadFromFile(assistant: Assistant, sessionId: String): ChatFacade? {
             val session = SessionStorage.loadSession(sessionId) ?: return null
 
-            return ChatFacade(assistant, sessionId, session.history)
+            return ChatFacade(assistant, sessionId, session.history, session.name)
         }
     }
 
-    internal fun asSnapshot() = SessionSnapshot(llmChatSession.getHistory(), llmClient!!.getModelName(), sessionId, assistant.systemPrompt)
+    internal fun asSnapshot() =
+        SessionSnapshot(
+            llmChatSession.getHistory(),
+            llmClient!!.getModelName(),
+            sessionId,
+            assistant.systemPrompt,
+            sessionName
+        )
 
     fun saveToFile(): Boolean {
         return SessionStorage.saveSession(asSnapshot())
@@ -48,16 +66,18 @@ class ChatFacade(
     fun sendMessage(text: String): Response {
         val response = llmChatSession.sendMessage(text)
 
+        initializeName(text)
+
         val totalTokens = countTokens()
-        val (success, error) = appendToWal(
+
+        appendToWal(
             sessionId = sessionId,
             prompt = text,
             responseText = response.text,
             totalTokens = totalTokens,
-            modelName = llmClient!!.getModelName()
+            modelName = llmClient.getModelName()
         )
 
-        // ignore WAL error
         return response
     }
 

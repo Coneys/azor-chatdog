@@ -6,8 +6,11 @@ import com.github.coneys.kazor.message.Message
 @Serializable
 class SessionHistory(val entries: List<Entry>) {
     @Serializable
-    class Entry(val role: String, val messages: List<Message>)
+    class Entry(val role: String, val messages: List<Message>) {
+        val messageText get() = messages.filterIsInstance<Message.Text>().joinToString { it.text }
+    }
 
+    val isEmpty get() = entries.isEmpty()
     val size get() = entries.size
 
     companion object {

@@ -7,5 +7,9 @@ class SessionSnapshot(
     val history: SessionHistory,
     val model: String,
     val sessionId: String,
-    val systemRole: String
-)
+    val systemRole: String,
+    val name: String? = null
+) {
+    val isEmpty: Boolean get() = history.isEmpty
+    val presentationName: String get() = name ?: sessionId
+}
