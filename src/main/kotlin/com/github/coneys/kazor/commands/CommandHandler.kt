@@ -101,7 +101,7 @@ class CommandHandler(
             "list" -> SessionManager.listAvailableSessions()
 
             "display" -> {
-                current.asSnapshot().history.display(Assistant.createAzorAssistant().name)
+                current.asSnapshot().history.display(current.assistantName)
             }
 
             "pop" -> {

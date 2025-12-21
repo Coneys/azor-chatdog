@@ -43,8 +43,9 @@ class ChatFacade(
     }
 
     companion object Companion {
-        fun loadFromFile(assistant: Assistant, sessionId: String): ChatFacade? {
+        fun loadFromFile(sessionId: String): ChatFacade? {
             val session = SessionStorage.loadSession(sessionId) ?: return null
+            val assistant = Assistant.getByName(session.assistantName)
 
             return ChatFacade(assistant, sessionId, session.history, session.name)
         }
@@ -116,7 +117,7 @@ class ChatFacade(
     }
 
     val assistantName: String
-        get() = assistant.name
+        get() = assistant.name.rawValue
 }
 
 data class Response(val text: String)

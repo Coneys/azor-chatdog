@@ -11,13 +11,12 @@ object SessionManager {
 
     fun initializeFromCli(cliSessionId: String?): ChatFacade {
         val session: ChatFacade
-        val assistant = Assistant.createAzorAssistant()
 
         if (cliSessionId != null) {
-            val loadedSession = ChatFacade.loadFromFile(assistant, cliSessionId)
+            val loadedSession = ChatFacade.loadFromFile(cliSessionId)
 
             session = if (loadedSession == null) {
-                val fresh = ChatFacade(assistant)
+                val fresh = ChatFacade(Assistant.default)
                 println("Rozpoczęto nową sesję z ID: ${fresh.sessionId}")
                 fresh
             } else {
@@ -30,7 +29,7 @@ object SessionManager {
             }
 
         } else {
-            session = createNewSession(assistant)
+            session = createNewSession(Assistant.default)
         }
 
         currentSession = session
@@ -39,7 +38,7 @@ object SessionManager {
 
     fun initializeNewSession() {
         SessionStorage.saveSession(currentSession.asSnapshot())
-        currentSession = createNewSession(Assistant.Companion.createAzorAssistant())
+        currentSession = createNewSession(Assistant.default)
     }
 
     private fun createNewSession(assistant: Assistant): ChatFacade {
@@ -64,7 +63,7 @@ object SessionManager {
     fun switchToSession(newId: String) {
         SessionStorage.saveSession(currentSession.asSnapshot())
 
-        val newSession = ChatFacade.Companion.loadFromFile(Assistant.Companion.createAzorAssistant(), newId)
+        val newSession = ChatFacade.Companion.loadFromFile(newId)
 
         if (newSession != null) {
             currentSession = newSession
