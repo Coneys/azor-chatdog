@@ -12,7 +12,25 @@ class CommandHandler(
     private val recordAudioForWholeSession: (SessionSnapshot) -> Unit,
 ) {
 
-    private val VALID_SLASH_COMMANDS = setOf("/exit", "/quit", "/switch", "/help", "/session", "/audio", "/audio-all")
+    private val VALID_SLASH_COMMANDS =
+        setOf("/exit", "/quit", "/switch", "/help", "/session", "/audio", "/audio-all", "/agent", "/agent-switch")
+
+    private fun switchAssistantByName(name: String) {
+        val current = SessionManager.currentSession
+        val target = Assistant.assistants.firstOrNull { it.name.rawValue.equals(name, ignoreCase = true) }
+        if (target == null) {
+            Console.printError("Błąd: Nie znaleziono asystenta o nazwie: $name")
+            Console.printHelp("Dostępni: ${Assistant.assistants.joinToString { it.name.rawValue }}")
+            return
+        }
+        if (current.assistantName.equals(target.name.rawValue, ignoreCase = true)) {
+            Console.printInfo("Asystent już jest aktywny: ${target.name.rawValue}")
+            return
+        }
+        current.switchAssistant(target)
+        Console.printInfo("Przełączono asystenta na: ${target.name.rawValue}")
+        current.getHistory().displaySummary(current.assistantName)
+    }
 
     /**
      * Handles slash commands.
@@ -46,6 +64,50 @@ class CommandHandler(
         if (command == "/help") {
             val current = SessionManager.currentSession
             Console.displayHelp(current.sessionId)
+        }
+
+        // --- AGENT LIST/SWITCH ---
+        if (command == "/agent" || command == "/agent-switch") {
+            if (command == "/agent-switch") {
+                if (parts.size < 2) {
+                    Console.printError("Błąd: Użycie: /agent-switch <NAZWA_ASYSTENTA>")
+                    return false
+                }
+                val name = parts.drop(1).joinToString(" ")
+                switchAssistantByName(name)
+                return false
+            }
+
+            if (parts.size < 2) {
+                Console.printError("Błąd: Komenda /agent wymaga podkomendy (list, switch <NAME>).")
+                return false
+            }
+
+            val sub = parts[1].lowercase()
+            when (sub) {
+                "list" -> {
+                    val current = SessionManager.currentSession.assistantName
+                    Console.printHelp("\n--- Dostępni asystenci ---")
+                    Assistant.assistants.forEach { a ->
+                        val marker = if (a.name.rawValue.equals(current, ignoreCase = true)) "*" else " "
+                        Console.printHelp("$marker ${a.name.rawValue}")
+                    }
+                    Console.printHelp("-------------------------")
+                }
+
+                "switch" -> {
+                    if (parts.size < 3) {
+                        Console.printError("Błąd: Użycie: /agent switch <NAZWA_ASYSTENTA>")
+                    } else {
+                        val name = parts.drop(2).joinToString(" ")
+                        switchAssistantByName(name)
+                    }
+                }
+
+                else -> Console.printError("Błąd: Nieznana podkomenda dla /agent: $sub. Użyj /help.")
+            }
+
+            return false
         }
 
         // --- EXIT ---
@@ -101,7 +163,8 @@ class CommandHandler(
             "list" -> SessionManager.listAvailableSessions()
 
             "display" -> {
-                current.asSnapshot().history.display(current.assistantName)
+                val asSnapshot = current.asSnapshot()
+                asSnapshot.history.display(current.assistantName, asSnapshot.assistantSwitches)
             }
 
             "pop" -> {

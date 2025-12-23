@@ -73,7 +73,7 @@ class OllamaChatSession(
                     sb.appendLine()
                 }
 
-                "com/github/coneys/kazor/assistant" -> {
+                "assistant" -> {
                     sb.appendLine("### Assistant:")
                     entry.messages.forEach {
                         when (it) {

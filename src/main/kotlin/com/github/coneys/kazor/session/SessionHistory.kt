@@ -1,10 +1,12 @@
 package com.github.coneys.kazor.session
 
+import com.github.coneys.kazor.assistant.Assistant
 import kotlinx.serialization.Serializable
 import com.github.coneys.kazor.message.Message
 
 @Serializable
 class SessionHistory(val entries: List<Entry>) {
+
     @Serializable
     class Entry(val role: String, val messages: List<Message>) {
         val messageText get() = messages.filterIsInstance<Message.Text>().joinToString { it.text }
@@ -40,9 +42,30 @@ class SessionHistory(val entries: List<Entry>) {
         println("----------------------------")
     }
 
-    fun display(assistantName: String) {
+    fun display(currentAssistantName: String, assistantSwitches: List<SessionAssistantSwitch>) {
         println("\n--- Wątek sesji ---")
-        entries.forEach { displayEntry(it, assistantName, false) }
+
+        // Determine the initial assistant in effect for the very first entry
+        // If there are recorded switches, the initial assistant is the one used BEFORE the first switch
+        // Otherwise, use the currently selected assistant name
+        val sortedSwitches = assistantSwitches.sortedBy { it.atEntryIndex }
+        var effectiveAssistantName = if (sortedSwitches.isNotEmpty()) {
+            sortedSwitches.first().switchFrom.rawValue
+        } else {
+            currentAssistantName
+        }
+
+        // Iterate once through entries and switches advancing the switch pointer when its index passes
+        var switchPointer = 0
+        entries.forEachIndexed { index, entry ->
+            while (switchPointer < sortedSwitches.size && sortedSwitches[switchPointer].atEntryIndex <= index) {
+                // Switch becomes effective starting at its index
+                effectiveAssistantName = sortedSwitches[switchPointer].switchTo.rawValue
+                switchPointer++
+            }
+
+            displayEntry(entry, effectiveAssistantName, false)
+        }
         println("----------------------------")
     }
 
@@ -50,7 +73,7 @@ class SessionHistory(val entries: List<Entry>) {
         val displayRole = when (entry.role) {
             "user" -> "TY"
             "model" -> assistantName
-            else -> entry.role
+            else -> entry.role.uppercase()
         }
 
         val text = entry.messages.firstOrNull()?.let {
@@ -59,19 +82,22 @@ class SessionHistory(val entries: List<Entry>) {
             }
         } ?: ""
 
-
         val preview = if (text.length > 80 && usePreview) text.take(80) + "..." else text
 
-        when (entry.role) {
-            "user" -> println("  $displayRole: $preview")
-            "model" -> println("  $displayRole: $preview")
-            else -> println("  $displayRole: $preview")
-        }
+        println("  $displayRole: $preview")
     }
 
     fun withUserMessage(text: String) = SessionHistory(entries + Entry("user", listOf(Message.Text(text))))
+    fun withAssistantSwitch(assistant: Assistant) =
+        SessionHistory(
+            entries + Entry(
+                "user",
+                listOf(Message.Text("[ASSISTANT SWITCH] Active assistant changed to ${assistant.name}. From now on, use the new system prompt"))
+            )
+        )
 
     fun withModelResponse(text: String) = SessionHistory(entries + Entry("model", listOf(Message.Text(text))))
+
     fun lastAgentResponse(): String? = entries.lastOrNull { it.role == "model" }
         ?.messages
         ?.filterIsInstance<Message.Text>()

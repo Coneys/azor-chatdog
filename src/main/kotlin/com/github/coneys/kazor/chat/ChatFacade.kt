@@ -7,20 +7,23 @@ import com.github.coneys.kazor.session.LlmChatSession
 import com.github.coneys.kazor.session.SessionSnapshot
 import com.github.coneys.kazor.session.SessionHistory
 import com.github.coneys.kazor.session.SessionStorage
+import com.github.coneys.kazor.session.SessionAssistantSwitch
 import com.github.coneys.kazor.session.name.SessionName
 import your.pkg.gemini.GeminiLLMClient
 import java.util.UUID
 
 class ChatFacade(
-    val assistant: Assistant,
+    var assistant: Assistant,
     val sessionId: String = UUID.randomUUID().toString(),
     initialHistory: SessionHistory = SessionHistory.Companion.empty,
-    initialName: String? = null
+    initialName: String? = null,
+    initialAssistantSwitches: List<SessionAssistantSwitch> = emptyList(),
 ) {
     private val llmClient: LlmClient
     private var llmChatSession: LlmChatSession
     private val maxContextTokens = 32768
     var sessionName: String? = initialName
+    val assistantSwitches: MutableList<SessionAssistantSwitch> = initialAssistantSwitches.toMutableList()
 
     init {
         val engine = (System.getenv("ENGINE") ?: "GEMINI").uppercase()
@@ -47,17 +50,24 @@ class ChatFacade(
             val session = SessionStorage.loadSession(sessionId) ?: return null
             val assistant = Assistant.getByName(session.assistantName)
 
-            return ChatFacade(assistant, sessionId, session.history, session.name)
+            return ChatFacade(
+                assistant = assistant,
+                sessionId = sessionId,
+                initialHistory = session.history,
+                initialName = session.name,
+                initialAssistantSwitches = session.assistantSwitches
+            )
         }
     }
 
     internal fun asSnapshot() =
         SessionSnapshot(
             llmChatSession.getHistory(),
-            llmClient!!.getModelName(),
+            llmClient.getModelName(),
             sessionId,
-            assistant.systemPrompt,
-            sessionName
+            sessionName,
+            assistant.name,
+            assistantSwitches
         )
 
     fun saveToFile(): Boolean {
@@ -88,6 +98,25 @@ class ChatFacade(
 
     fun clearHistory() {
         llmChatSession = initializeSession(SessionHistory.empty)
+        saveToFile()
+    }
+
+    fun switchAssistant(newAssistant: Assistant) {
+        // Current size before adding marker
+        val currentSize = llmChatSession.getHistory().entries.size
+        // Insert a trace marker into history to indicate persona switch
+        val updatedHistory = llmChatSession.getHistory().withAssistantSwitch(newAssistant)
+        // Record assistant switch at the index of the inserted marker
+        assistantSwitches.add(
+            SessionAssistantSwitch(
+                atEntryIndex = currentSize,
+                switchFrom = this.assistant.name,
+                switchTo = newAssistant.name
+            )
+        )
+        // Update assistant and reinitialize session with new system prompt and updated history
+        this.assistant = newAssistant
+        llmChatSession = initializeSession(updatedHistory)
         saveToFile()
     }
 
