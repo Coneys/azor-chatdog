@@ -53,15 +53,19 @@ object Console {
 
     fun displayAvailableCommands() {
         printHelp("Dostępne komendy (slash commands):")
-        printHelp("  /switch <ID>      - Przełącza na istniejącą sesję.")
-        printHelp("  /help             - Wyświetla tę pomoc.")
-        printHelp("  /exit, /quit      - Zakończenie czatu.")
-
-        printHelp("\n  /session list     - Wyświetla listę dostępnych sesji.")
-        printHelp("  /session display  - Wyświetla całą historię sesji.")
-        printHelp("  /session pop      - Usuwa ostatnią parę wpisów (TY i asystent).")
-        printHelp("  /session clear    - Czyści historię bieżącej sesji.")
-        printHelp("  /session new      - Rozpoczyna nową sesję.")
+        printHelp("  /switch <ID>               - Przełącza na istniejącą sesję.")
+        printHelp("  /help                      - Wyświetla tę pomoc.")
+        printHelp("  /exit, /quit               - Zakończenie czatu.")
+        printHelp("")
+        printHelp("  /agent list                - Wyświetla listę dostępnych asystentów (aktualny oznaczony *).")
+        printHelp("  /agent switch <NAZWA>      - Przełącza aktywnego asystenta na podaną nazwę.")
+        printHelp("  /agent-switch <NAZWA>      - Skrót do szybkiego przełączenia asystenta (to samo co powyżej).")
+        printHelp("")
+        printHelp("  /session list              - Wyświetla listę dostępnych sesji.")
+        printHelp("  /session display           - Wyświetla całą historię sesji.")
+        printHelp("  /session pop               - Usuwa ostatnią parę wpisów (TY i asystent).")
+        printHelp("  /session clear             - Czyści historię bieżącej sesji.")
+        printHelp("  /session new               - Rozpoczyna nową sesję.")
         printHelp("  /session rename <NOWY_TYTUŁ> - Zmienia tytuł bieżącej sesji.")
     }
 

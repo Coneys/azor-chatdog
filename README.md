@@ -64,17 +64,21 @@ Przykłady uruchomienia:
 W trakcie czatu dostępne są następujące polecenia:
 
 ```
-/switch <ID>      - Przełącza na istniejącą sesję.
-/help             - Wyświetla tę pomoc.
-/exit, /quit      - Zakończenie czatu.
-/audio            - Generuje plik WAV z ostatniej odpowiedzi asystenta (wymaga działającego serwera TTS — patrz sekcja „Audio”).
-/audio-all        - Generuje jeden plik WAV z całej sesji (naprzemiennie TY ↔ asystent). Wymaga serwera TTS obsługującego wiele głosów — patrz sekcja „Audio”.
+/switch <ID>               - Przełącza na istniejącą sesję.
+/help                      - Wyświetla tę pomoc.
+/exit, /quit               - Zakończenie czatu.
+/audio                     - Generuje plik WAV z ostatniej odpowiedzi asystenta (wymaga działającego serwera TTS — patrz sekcja „Audio”).
+/audio-all                 - Generuje jeden plik WAV z całej sesji (naprzemiennie TY ↔ asystent). Wymaga serwera TTS obsługującego wiele głosów — patrz sekcja „Audio”).
 
-/session list     - Wyświetla listę dostępnych sesji.
-/session display  - Wyświetla całą historię sesji.
-/session pop      - Usuwa ostatnią parę wpisów (TY i asystent).
-/session clear    - Czyści historię bieżącej sesji.
-/session new      - Rozpoczyna nową sesję.
+/agent list                - Wyświetla listę dostępnych asystentów (aktualny oznaczony *).
+/agent switch <NAZWA>      - Przełącza aktywnego asystenta na podaną nazwę.
+/agent-switch <NAZWA>      - Skrót do szybkiego przełączenia asystenta (jak powyżej).
+
+/session list              - Wyświetla listę dostępnych sesji.
+/session display           - Wyświetla całą historię sesji.
+/session pop               - Usuwa ostatnią parę wpisów (TY i asystent).
+/session clear             - Czyści historię bieżącej sesji.
+/session new               - Rozpoczyna nową sesję.
 /session rename <NOWY_TYTUŁ> - Zmienia tytuł bieżącej sesji.
 ```
 
