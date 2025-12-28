@@ -1,8 +1,11 @@
 package com.github.coneys.kazor.session
 
+import ai.koog.prompt.params.LLMParams
 import com.github.coneys.kazor.assistant.Assistant
+import com.github.coneys.kazor.llm.LlmClient
 import kotlinx.serialization.Serializable
 import com.github.coneys.kazor.message.Message
+import kotlinx.serialization.json.JsonPrimitive
 
 @Serializable
 class SessionHistory(val entries: List<Entry>) {
@@ -103,4 +106,5 @@ class SessionHistory(val entries: List<Entry>) {
         ?.filterIsInstance<Message.Text>()
         ?.lastOrNull()?.text
 
+    fun asText(): String = entries.joinToString("\n") { it.messageText }
 }

@@ -13,6 +13,7 @@ repositories {
 
 dependencies {
     implementation("com.google.genai:google-genai:1.27.0")
+    implementation("ai.koog:koog-agents:0.6.0")
     testImplementation(kotlin("test"))
     implementation("io.ktor:ktor-client-core:3.3.2")
     implementation("io.ktor:ktor-client-cio:3.3.2")
@@ -20,7 +21,7 @@ dependencies {
     implementation("io.ktor:ktor-client-content-negotiation:3.3.2")
     implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.0")
-    implementation("ch.qos.logback:logback-classic:1.5.21")
+    implementation("org.slf4j:slf4j-nop:2.0.17")
 
 }
 
